@@ -3,11 +3,11 @@ from datetime import datetime, date
 from banco import (conectar, preparar_banco, garantir_cliente, obter_usuario,
                    obter_conversa, salvar_conversa, limpar_conversa, agora)
 
-AJUDA_CLIENTE = ('Olá! Sou o assistente de rotas.\n'
-                 'Digite /nova para solicitar uma rota.\n'
-                 'Digite /minhasrotas para consultar suas solicitações.\n'
-                 'Digite /cancelar para cancelar um cadastro em andamento.\n'
-                 'Digite /ajuda para ver este menu.')
+AJUDA_CLIENTE = ('📋 Menu principal — Central de Rotas\n'
+                 '➕ /nova — Solicitar uma rota\n'
+                 '📦 /minhasrotas — Consultar minhas solicitações\n'
+                 '❌ /cancelar — Cancelar um cadastro em andamento\n'
+                 '❓ /ajuda — Mostrar este menu novamente')
 AJUDA_MOTORISTA = ('Área do motorista:\n'
                    '/rotas — rotas disponíveis\n'
                    '/detalhes 101 — conferir dados de uma rota\n'
@@ -155,8 +155,33 @@ def detalhes_rota(conn, rota_id, condicao_extra='', parametros=()):
 
 
 def comandos_cliente(conn, telefone, texto):
+    usuario = obter_usuario(conn, telefone)
     etapa, dados = obter_conversa(conn, telefone)
     comando = texto.casefold()
+
+    # Primeiro contato: solicitamos o nome antes de mostrar qualquer menu.
+    # Esta etapa fica salva no banco, de forma que o atendimento possa
+    # continuar caso o visitante recarregue a página.
+    if not usuario['nome_confirmado']:
+        if etapa != 'nome':
+            salvar_conversa(conn, telefone, 'nome', {})
+            return ('👋 Olá! Seja bem-vindo à Central de Rotas!\n'
+                    '🚚 Sou o assistente virtual da empresa.\n\n'
+                    'Antes de começarmos, como posso chamar você?')
+
+        nome = ' '.join(texto.split())
+        if (not 2 <= len(nome) <= 80 or nome.startswith('/')
+                or not any(letra.isalpha() for letra in nome)
+                or any(not (letra.isalpha() or letra in " -'’") for letra in nome)):
+            return ('Não consegui identificar seu nome. 😊\n'
+                    'Por favor, digite seu nome com letras, por exemplo: Maria Silva.')
+
+        conn.execute("""UPDATE usuarios
+                        SET nome=?, nome_confirmado=1
+                        WHERE telefone=? AND papel='cliente'""", (nome, telefone))
+        limpar_conversa(conn, telefone)
+        return f'Prazer em conhecer você, {nome}! 😊\n\n{AJUDA_CLIENTE}'
+
     primeira_palavra = comando.split()[0]
     if primeira_palavra in COMANDOS_RESTRITOS:
         return NEGADO
@@ -171,7 +196,7 @@ def comandos_cliente(conn, telefone, texto):
     if comando == '/minhasrotas':
         rotas = lista_rotas(conn, 'r.cliente_telefone=?', (telefone,))
         return ('Suas rotas:\n' + '\n\n'.join(map(formatar_rota, rotas))) if rotas else 'Nenhuma rota encontrada.'
-    return AJUDA_CLIENTE
+    return f'Olá, {usuario["nome"]}! 👋\n\n{AJUDA_CLIENTE}'
 
 
 def comandos_motorista(conn, usuario, texto):
