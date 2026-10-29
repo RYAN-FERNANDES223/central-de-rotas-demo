@@ -1,5 +1,16 @@
 # Central de Rotas — Demonstração visual 0.4
 
+## Atualização 0.6 — boas-vindas e nome do cliente
+
+Ao entrar como **Cliente** na demonstração, o bot envia automaticamente a saudação e pergunta o nome **antes de exibir o menu**. O cliente deve responder com um nome de 2 a 80 caracteres, usando letras, espaços, apóstrofo ou hífen. Depois, o nome é gravado no banco de dados temporário da sessão, o bot responde de forma personalizada e libera os comandos `/nova`, `/minhasrotas`, `/cancelar` e `/ajuda`.
+
+O cadastro inicial **não se aplica** aos motoristas e administradores previamente autorizados. As rotas de exemplo são criadas com um cliente fictício separado, para que não antecipem a identificação de quem estiver testando o site.
+
+Para experimentar o primeiro contato novamente, clique em **Reiniciar demonstração**.
+
+Para verificar a lógica localmente: `python -m unittest discover -s tests -v` (requer Python; não depende do Streamlit para estes testes).
+
+
 ## Atualização visual 0.5
 
 A interface ganhou balões de conversa semelhantes aos de mensageiros, indicadores de status com cores, cartões com origem/destino/data/horário e identificação do motorista responsável. Os botões de aceitar, iniciar e concluir continuam chamando os comandos originais do bot, sem substituir as regras de atribuição.
