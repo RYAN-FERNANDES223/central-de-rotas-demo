@@ -9,7 +9,7 @@ from pathlib import Path
 import streamlit as st
 
 from banco import conectar, selecionar_banco
-from demo_data import PERFIS, enviar, preparar_cenario
+from demo_data import PERFIS, CPFS_TESTE, enviar, preparar_cenario
 
 st.set_page_config(
     page_title='Central de Rotas | Demonstração',
@@ -114,13 +114,14 @@ def inicializar():
                 'Olá! Esta é uma demonstração do sistema. Envie oi ou use os botões abaixo para testar.'}]
             for nome in PERFIS
         }
-        # A pergunta inicial aparece automaticamente no chat do cliente,
-        # sem mostrar os atalhos do menu antes da identificação.
-        saudacao = enviar('Cliente', 'oi')
-        st.session_state.historico['Cliente'] = [
-            {'tipo': 'assistant', 'texto': trecho.strip()}
-            for trecho in saudacao.split('\n\n') if trecho.strip()
-        ]
+        # Novos contatos, inclusive motoristas, começam identificando-se.
+        # O administrador de demonstração já é cadastrado localmente.
+        for nome in PERFIS:
+            saudacao = enviar(nome, 'oi')
+            st.session_state.historico[nome] = [
+                {'tipo': 'assistant', 'texto': trecho.strip()}
+                for trecho in saudacao.split('\n\n') if trecho.strip()
+            ]
 
 
 def reiniciar():
@@ -134,10 +135,17 @@ def reiniciar():
 
 def responder(texto):
     perfil = st.session_state.perfil
+    # Evita exibir o CPF digitado no histórico da demonstração.
+    with conectar() as conn:
+        etapa = conn.execute(
+            'SELECT etapa FROM conversas WHERE telefone=?', (PERFIS[perfil],)
+        ).fetchone()
+    ocultar = bool(etapa and etapa['etapa'] in ('ident_cpf', 'admin_motorista_cpf'))
     resposta = enviar(perfil, texto)
     hora = datetime.now().strftime('%H:%M')
     st.session_state.historico[perfil].extend([
-        {'tipo': 'user', 'texto': texto, 'hora': hora},
+        {'tipo': 'user',
+         'texto': '🔒 CPF informado (oculto)' if ocultar else texto, 'hora': hora},
         {'tipo': 'assistant', 'texto': resposta, 'hora': hora},
     ])
 
@@ -151,14 +159,24 @@ def listar_rotas():
         ''').fetchall()]
 
 
-def cliente_identificado():
-    """Verifica se o cliente fictício já informou seu nome."""
+def acesso_atual():
+    """Permissões de verdade no banco, não na etiqueta do perfil selecionado."""
+    telefone = PERFIS[st.session_state.perfil]
     with conectar() as conn:
-        row = conn.execute(
-            'SELECT nome_confirmado FROM usuarios WHERE telefone=?',
-            (PERFIS['Cliente'],)
+        usuario = conn.execute(
+            'SELECT nome, papel, ativo, cpf_confirmado FROM usuarios WHERE telefone=?',
+            (telefone,)
         ).fetchone()
-    return bool(row and row['nome_confirmado'])
+    if not usuario:
+        return 'pendente'
+    if not usuario['ativo']:
+        return 'bloqueado'
+    if usuario['papel'] == 'admin':
+        return 'admin'
+    if not usuario['cpf_confirmado']:
+        return 'pendente'
+    return usuario['papel']
+
 
 
 def texto_html(valor):
@@ -231,6 +249,16 @@ with st.sidebar:
         '</div></div>', unsafe_allow_html=True
     )
     st.info('Ambiente com dados fictícios. Não conectado ao WhatsApp.', icon='ℹ️')
+    with st.expander('🧪 Dados fictícios para testar a identificação'):
+        st.markdown(
+            '**Motorista A:** Motorista A\\n'
+            f'CPF: `{CPFS_TESTE["Motorista A"]}`\\n\\n'
+            '**Motorista B:** Motorista B\\n'
+            f'CPF: `{CPFS_TESTE["Motorista B"]}`\\n\\n'
+            '**Cliente:** use um nome inventado e CPF fictício '
+            f'`{CPFS_TESTE["Cliente visitante"]}`.\\n\\n'
+            'Os CPFs são apenas exemplos. Não digite documentos reais.'
+        )
     st.markdown('<div class="sidebar-section">👤 Quem está usando o sistema?</div>',
                 unsafe_allow_html=True)
     st.selectbox('Perfil simulado', list(PERFIS), key='perfil',
@@ -257,7 +285,16 @@ st.markdown(
 )
 
 rotas = listar_rotas()
-contagens = {s: sum(r['status']==s for r in rotas)
+acesso = acesso_atual()
+if acesso in ('admin', 'motorista'):
+    rotas_visiveis = rotas
+elif acesso == 'cliente':
+    rotas_visiveis = [
+        r for r in rotas if r['cliente_telefone'] == PERFIS[st.session_state.perfil]
+    ]
+else:
+    rotas_visiveis = []
+contagens = {s: sum(r['status']==s for r in rotas_visiveis)
              for s in ['disponivel', 'atribuida', 'em_andamento', 'concluida']}
 resumos = [
     ('📍', 'Disponíveis', contagens['disponivel'], 'Rotas aguardando motorista', 'green'),
@@ -281,17 +318,20 @@ with col_chat:
     st.markdown('<div class="section-heading">💬 Simulador de conversa</div>',
                 unsafe_allow_html=True)
     st.markdown(
-        f'<div class="role-note">Perfil selecionado: <strong>{texto_html(st.session_state.perfil)}</strong>'
-        ' · Esta conversa simula o WhatsApp.</div>',
+        f'<div class="role-note">Contato simulado: <strong>{texto_html(st.session_state.perfil)}</strong>'
+        f' · Permissão atual: <strong>{texto_html(acesso)}</strong></div>',
         unsafe_allow_html=True
     )
     perfil = st.session_state.perfil
-    if perfil == 'Cliente' and not cliente_identificado():
+    if acesso == 'pendente':
         atalhos = []
-        st.info('👋 Antes de começar, responda no chat informando seu nome. O menu aparecerá depois.')
-    elif perfil == 'Cliente':
+        st.info('👋 Para liberar seu menu, informe nome e CPF fictício no chat.')
+    elif acesso == 'bloqueado':
+        atalhos = []
+        st.error('Este acesso está bloqueado. Contate a administração.')
+    elif acesso == 'cliente':
         atalhos = [('➕ Nova rota', '/nova'), ('📋 Minhas rotas', '/minhasrotas'), ('✖ Cancelar', '/cancelar')]
-    elif perfil.startswith('Motorista'):
+    elif acesso == 'motorista':
         atalhos = [('📋 Ver rotas', '/rotas'), ('🚚 Minhas', '/minhas'), ('ℹ️ Ajuda', '/motorista')]
     else:
         atalhos = [('📊 Resumo', '/resumo'), ('📋 Rotas', '/rotas'), ('⚙️ Ajuda', '/admin')]
@@ -315,11 +355,17 @@ with col_visao:
                 unsafe_allow_html=True)
     st.markdown('<div class="section-hint">Acompanhe os serviços cadastrados no simulador.</div>',
                 unsafe_allow_html=True)
-    if perfil == 'Cliente':
-        if cliente_identificado():
-            st.info('Experimente **➕ Nova rota** no chat. Após confirmar com **S**, a solicitação aparecerá aqui.', icon='💡')
-        else:
-            st.info('Primeiro, informe seu nome na conversa. Depois você poderá cadastrar sua rota.', icon='💡')
+    if acesso in ('pendente', 'bloqueado'):
+        st.info('A visualização das rotas será liberada após a identificação do contato.')
+        st.markdown(
+            '<div class="info-steps"><strong>Como funciona</strong><br>'
+            '① Informe seu nome<br>② Informe um CPF fictício válido<br>'
+            '③ O sistema verifica se você é cliente ou motorista cadastrado<br>'
+            '④ O menu correspondente é liberado</div>',
+            unsafe_allow_html=True
+        )
+    elif acesso == 'cliente':
+        st.info('Experimente **➕ Nova rota** no chat. Após confirmar com **S**, a solicitação aparecerá aqui.', icon='💡')
         st.markdown(
             '<div class="info-steps"><strong>O que o cliente informa</strong><br>'
             '📍 Origem e destino<br>📅 Data e horário<br>'
@@ -327,11 +373,13 @@ with col_visao:
             unsafe_allow_html=True
         )
         st.markdown('#### Rotas desta demonstração')
-        for rota in rotas[:8]:
+        if not rotas_visiveis:
+            st.caption('Nenhuma solicitação deste cliente até o momento.')
+        for rota in rotas_visiveis[:8]:
             painel_rota(rota)
-    elif perfil.startswith('Motorista'):
+    elif acesso == 'motorista':
         st.markdown('#### Rotas disponíveis')
-        disponiveis = [r for r in rotas if r['status']=='disponivel']
+        disponiveis = [r for r in rotas_visiveis if r['status']=='disponivel']
         if not disponiveis:
             st.info('Não há rotas disponíveis. Troque para Cliente e cadastre outra.')
         for rota in disponiveis:
@@ -342,8 +390,14 @@ with col_visao:
                     responder(f"/aceitar {rota['id']}")
                     st.rerun()
         st.markdown('#### Minhas rotas')
-        for rota in rotas:
-            if rota['motorista_nome'] == perfil:
+        with conectar() as conn:
+            registro_motorista = conn.execute(
+                'SELECT motorista_id FROM usuarios WHERE telefone=?',
+                (PERFIS[perfil],)
+            ).fetchone()
+        motorista_id = registro_motorista['motorista_id'] if registro_motorista else None
+        for rota in rotas_visiveis:
+            if rota['motorista_id'] == motorista_id:
                 with st.container(border=True):
                     painel_rota(rota)
                     if rota['status']=='atribuida':
@@ -358,7 +412,7 @@ with col_visao:
         st.markdown('#### Acompanhamento administrativo')
         if not rotas:
             st.info('Ainda não há solicitações.')
-        for rota in rotas:
+        for rota in rotas_visiveis:
             with st.container(border=True):
                 painel_rota(rota)
                 if rota['status']=='atribuida':
