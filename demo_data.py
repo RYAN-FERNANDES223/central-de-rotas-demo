@@ -22,6 +22,13 @@ def preparar_cenario():
     assert 'cadastrado' in enviar('Administrador', '/motorista adicionar 5500000000002 Motorista A').lower()
     assert 'cadastrado' in enviar('Administrador', '/motorista adicionar 5500000000004 Motorista B').lower()
 
+    # Usamos um cliente de exemplo separado do visitante da apresentação,
+    # assim as rotas fictícias aparecem sem pular a pergunta sobre o nome.
+    telefone_exemplo = '5500000000005'
+    receber_mensagem(telefone_exemplo, 'oi')
+    resposta_nome = receber_mensagem(telefone_exemplo, 'Cliente Exemplo')
+    assert 'Cliente Exemplo' in resposta_nome, resposta_nome
+
     exemplos = [
         ('Belo Horizonte, MG', 'Sete Lagoas, MG', 2, '08:00', 'Entrega de caixas (exemplo fictício)'),
         ('Contagem, MG', 'Betim, MG', 4, '13:30', 'Coleta de mercadorias (exemplo fictício)'),
@@ -31,5 +38,5 @@ def preparar_cenario():
                      (date.today() + timedelta(days=dias)).strftime('%d/%m/%Y'),
                      hora, observacoes, 's']
         for mensagem in mensagens:
-            resposta = enviar('Cliente', mensagem)
+            resposta = receber_mensagem(telefone_exemplo, mensagem)
         assert 'cadastrada' in resposta.lower(), resposta
