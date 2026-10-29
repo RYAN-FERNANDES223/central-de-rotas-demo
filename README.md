@@ -1,5 +1,14 @@
 # Central de Rotas — Demonstração visual 0.4
 
+## Atualização visual 0.5
+
+A interface ganhou balões de conversa semelhantes aos de mensageiros, indicadores de status com cores, cartões com origem/destino/data/horário e identificação do motorista responsável. Os botões de aceitar, iniciar e concluir continuam chamando os comandos originais do bot, sem substituir as regras de atribuição.
+
+**Validação recomendada após o deploy:** entrar como Cliente, cadastrar uma rota fictícia, aceitar como Motorista A, conferir que ela saiu da lista disponível para Motorista B e consultar o motorista responsável como Administrador.
+
+Essa aplicação é apenas uma demonstração no navegador. Não recebe mensagens reais do WhatsApp, não possui autenticação efetiva e utiliza banco SQLite temporário por sessão. Não utilize dados reais ou informações sensíveis.
+
+
 Demo web em Streamlit usando a **lógica verdadeira de `bot.py` da versão 0.3**. A interação parece um WhatsApp, mas **não envia nem recebe mensagens pelo WhatsApp de verdade**.
 
 ## Rodar no computador (Windows + VS Code)
