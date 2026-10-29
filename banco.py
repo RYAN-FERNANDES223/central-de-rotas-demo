@@ -42,8 +42,16 @@ def preparar_banco():
     with conectar() as conn:
         conn.execute('''CREATE TABLE IF NOT EXISTS motoristas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL
+            nome TEXT NOT NULL,
+            cpf_hash TEXT UNIQUE,
+            ativo INTEGER NOT NULL DEFAULT 1
         )''')
+        colunas_motorista = {r['name'] for r in conn.execute('PRAGMA table_info(motoristas)')}
+        if 'cpf_hash' not in colunas_motorista:
+            conn.execute('ALTER TABLE motoristas ADD COLUMN cpf_hash TEXT')
+        if 'ativo' not in colunas_motorista:
+            conn.execute('ALTER TABLE motoristas ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1')
+        conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_motorista_cpf ON motoristas(cpf_hash)')
         conn.execute('''CREATE TABLE IF NOT EXISTS rotas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             origem TEXT NOT NULL,
@@ -66,6 +74,8 @@ def preparar_banco():
             nome TEXT NOT NULL,
             papel TEXT NOT NULL CHECK (papel IN ('cliente', 'motorista', 'admin')),
             nome_confirmado INTEGER NOT NULL DEFAULT 0 CHECK (nome_confirmado IN (0, 1)),
+            cpf_hash TEXT,
+            cpf_confirmado INTEGER NOT NULL DEFAULT 0 CHECK (cpf_confirmado IN (0, 1)),
             ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
             motorista_id INTEGER UNIQUE REFERENCES motoristas(id)
         )''')
@@ -78,6 +88,11 @@ def preparar_banco():
                 UPDATE usuarios SET nome_confirmado=1
                 WHERE papel='cliente' AND TRIM(nome) NOT IN ('', 'Cliente')
             """)
+
+        if 'cpf_hash' not in colunas_usuario:
+            conn.execute('ALTER TABLE usuarios ADD COLUMN cpf_hash TEXT')
+        if 'cpf_confirmado' not in colunas_usuario:
+            conn.execute('ALTER TABLE usuarios ADD COLUMN cpf_confirmado INTEGER NOT NULL DEFAULT 0')
 
         conn.execute('''CREATE TABLE IF NOT EXISTS conversas (
             telefone TEXT PRIMARY KEY REFERENCES usuarios(telefone),
