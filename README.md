@@ -1,4 +1,23 @@
-# Central de Rotas — Demonstração visual 0.4
+# Central de Rotas — Demonstração visual
+
+## Versão 0.7 — identificação do cliente e reconhecimento de motoristas
+
+A demonstração agora pergunta **nome e CPF antes do menu**. O sistema verifica apenas se o CPF de teste tem um formato e dígitos verificadores matematicamente válidos — **não consulta a Receita Federal nem comprova identidade**.
+
+### Roteiro de demonstração
+
+1. Selecione **Administrador** no perfil simulado e digite `/motoristas`. O site já tem dois cadastros fictícios para testes.
+2. Para adicionar outro motorista, envie `/motorista adicionar`, responda com o **nome** e depois com um **CPF de teste** de 11 dígitos matematicamente válido. Os motoristas são cadastrados sem acesso automático.
+3. Selecione **Motorista A**. Na conversa, informe `Motorista A` e depois `123.456.789-09` (CPF de teste). O bot reconhecerá o pré-cadastro e liberará os comandos `/rotas`, `/aceitar`, `/minhas` e demais recursos exclusivos.
+4. Selecione **Motorista B**. Digite `Motorista B` e `987.654.321-00` (CPF de teste). Verifique que o segundo motorista também precisa passar pela identificação.
+5. Selecione **Cliente**, informe um nome inventado e CPF de teste `314.159.265-90`. O bot liberará o menu de solicitação de rotas.
+6. Cadastre uma rota no chat do cliente, aceite como Motorista A e confirme que ela não aparece mais como disponível para Motorista B.
+7. Para refazer o teste desde o início, use **Reiniciar demonstração**.
+
+Os CPFs aqui publicados são apenas números destinados a testar o algoritmo; **não são prova de identidade** e não devem ser associados a pessoas. O bot oculta a mensagem de CPF no histórico da interface e armazena somente uma assinatura no SQLite temporário. A chave de assinatura da demonstração está no código público e **não protege dados reais**. Não insira documentos pessoais reais nesse aplicativo público.
+
+**Atenção para a versão comercial:** nome e CPF são dados conhecidos por terceiros e não podem ser usados como único fator de autenticação de motoristas ou administradores. Na integração com WhatsApp será necessário verificar a origem das mensagens e adotar um fator de confirmação adicional, além de controles de acesso, armazenamento seguro, privacidade/LGPD e medidas contra tentativas repetidas de acesso.
+
 
 ## Atualização 0.6 — boas-vindas e nome do cliente
 
