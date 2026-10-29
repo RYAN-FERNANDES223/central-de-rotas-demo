@@ -111,9 +111,16 @@ def inicializar():
         st.session_state.perfil = 'Cliente'
         st.session_state.historico = {
             nome: [{'tipo': 'assistant', 'texto':
-                'Olá! Esta é uma demonstração do sistema. Envie **oi** ou use os botões abaixo para testar.'}]
+                'Olá! Esta é uma demonstração do sistema. Envie oi ou use os botões abaixo para testar.'}]
             for nome in PERFIS
         }
+        # A pergunta inicial aparece automaticamente no chat do cliente,
+        # sem mostrar os atalhos do menu antes da identificação.
+        saudacao = enviar('Cliente', 'oi')
+        st.session_state.historico['Cliente'] = [
+            {'tipo': 'assistant', 'texto': trecho.strip()}
+            for trecho in saudacao.split('\n\n') if trecho.strip()
+        ]
 
 
 def reiniciar():
@@ -142,6 +149,16 @@ def listar_rotas():
             LEFT JOIN motoristas m ON m.id = r.motorista_id
             ORDER BY r.id DESC LIMIT 100
         ''').fetchall()]
+
+
+def cliente_identificado():
+    """Verifica se o cliente fictício já informou seu nome."""
+    with conectar() as conn:
+        row = conn.execute(
+            'SELECT nome_confirmado FROM usuarios WHERE telefone=?',
+            (PERFIS['Cliente'],)
+        ).fetchone()
+    return bool(row and row['nome_confirmado'])
 
 
 def texto_html(valor):
@@ -210,7 +227,7 @@ with st.sidebar:
     st.markdown(
         '<div class="brand"><span class="brand-icon">🚚</span><div>'
         '<div class="brand-title">Central de Rotas</div>'
-        '<div class="brand-subtitle">Demonstração comercial · Versão 0.5</div>'
+        '<div class="brand-subtitle">Demonstração comercial · Versão 0.6</div>'
         '</div></div>', unsafe_allow_html=True
     )
     st.info('Ambiente com dados fictícios. Não conectado ao WhatsApp.', icon='ℹ️')
@@ -235,7 +252,7 @@ st.markdown(
     '<div class="top-intro"><div>'
     '<h1>Bem-vindo à Central de Rotas!</h1>'
     '<p>Solicitações, motoristas e acompanhamento em um só lugar.</p>'
-    '</div><span class="top-pill">● Protótipo navegável · versão 0.5</span></div>',
+    '</div><span class="top-pill">● Protótipo navegável · versão 0.6</span></div>',
     unsafe_allow_html=True
 )
 
@@ -269,17 +286,21 @@ with col_chat:
         unsafe_allow_html=True
     )
     perfil = st.session_state.perfil
-    if perfil == 'Cliente':
+    if perfil == 'Cliente' and not cliente_identificado():
+        atalhos = []
+        st.info('👋 Antes de começar, responda no chat informando seu nome. O menu aparecerá depois.')
+    elif perfil == 'Cliente':
         atalhos = [('➕ Nova rota', '/nova'), ('📋 Minhas rotas', '/minhasrotas'), ('✖ Cancelar', '/cancelar')]
     elif perfil.startswith('Motorista'):
         atalhos = [('📋 Ver rotas', '/rotas'), ('🚚 Minhas', '/minhas'), ('ℹ️ Ajuda', '/motorista')]
     else:
         atalhos = [('📊 Resumo', '/resumo'), ('📋 Rotas', '/rotas'), ('⚙️ Ajuda', '/admin')]
-    cols = st.columns(len(atalhos))
-    for i, (rotulo, comando) in enumerate(atalhos):
-        if cols[i].button(rotulo, key=f'atalho_{perfil}_{i}', use_container_width=True):
-            responder(comando)
-            st.rerun()
+    if atalhos:
+        cols = st.columns(len(atalhos))
+        for i, (rotulo, comando) in enumerate(atalhos):
+            if cols[i].button(rotulo, key=f'atalho_{perfil}_{i}', use_container_width=True):
+                responder(comando)
+                st.rerun()
 
     with st.container(height=445, border=False):
         painel_conversa(perfil)
@@ -295,7 +316,10 @@ with col_visao:
     st.markdown('<div class="section-hint">Acompanhe os serviços cadastrados no simulador.</div>',
                 unsafe_allow_html=True)
     if perfil == 'Cliente':
-        st.info('Experimente **➕ Nova rota** no chat. Após confirmar com **S**, a solicitação aparecerá aqui.', icon='💡')
+        if cliente_identificado():
+            st.info('Experimente **➕ Nova rota** no chat. Após confirmar com **S**, a solicitação aparecerá aqui.', icon='💡')
+        else:
+            st.info('Primeiro, informe seu nome na conversa. Depois você poderá cadastrar sua rota.', icon='💡')
         st.markdown(
             '<div class="info-steps"><strong>O que o cliente informa</strong><br>'
             '📍 Origem e destino<br>📅 Data e horário<br>'
