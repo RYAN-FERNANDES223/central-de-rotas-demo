@@ -65,9 +65,20 @@ def preparar_banco():
             telefone TEXT PRIMARY KEY,
             nome TEXT NOT NULL,
             papel TEXT NOT NULL CHECK (papel IN ('cliente', 'motorista', 'admin')),
+            nome_confirmado INTEGER NOT NULL DEFAULT 0 CHECK (nome_confirmado IN (0, 1)),
             ativo INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
             motorista_id INTEGER UNIQUE REFERENCES motoristas(id)
         )''')
+        # Atualiza bancos anteriores sem remover clientes, motoristas ou rotas.
+        colunas_usuario = {linha['name'] for linha in conn.execute('PRAGMA table_info(usuarios)')}
+        if 'nome_confirmado' not in colunas_usuario:
+            conn.execute('ALTER TABLE usuarios ADD COLUMN nome_confirmado INTEGER NOT NULL DEFAULT 0')
+            # Preserva nomes de clientes já preenchidos em versões anteriores.
+            conn.execute("""
+                UPDATE usuarios SET nome_confirmado=1
+                WHERE papel='cliente' AND TRIM(nome) NOT IN ('', 'Cliente')
+            """)
+
         conn.execute('''CREATE TABLE IF NOT EXISTS conversas (
             telefone TEXT PRIMARY KEY REFERENCES usuarios(telefone),
             etapa TEXT NOT NULL,
