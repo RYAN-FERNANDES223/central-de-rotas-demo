@@ -245,7 +245,7 @@ with st.sidebar:
     st.markdown(
         '<div class="brand"><span class="brand-icon">🚚</span><div>'
         '<div class="brand-title">Central de Rotas</div>'
-        '<div class="brand-subtitle">Demonstração comercial · Versão 0.6</div>'
+        '<div class="brand-subtitle">Demonstração comercial · Versão 0.7</div>'
         '</div></div>', unsafe_allow_html=True
     )
     st.info('Ambiente com dados fictícios. Não conectado ao WhatsApp.', icon='ℹ️')
@@ -280,7 +280,7 @@ st.markdown(
     '<div class="top-intro"><div>'
     '<h1>Bem-vindo à Central de Rotas!</h1>'
     '<p>Solicitações, motoristas e acompanhamento em um só lugar.</p>'
-    '</div><span class="top-pill">● Protótipo navegável · versão 0.6</span></div>',
+    '</div><span class="top-pill">● Protótipo navegável · versão 0.7</span></div>',
     unsafe_allow_html=True
 )
 
@@ -422,4 +422,4 @@ with col_visao:
         st.caption('Cadastre e bloqueie motoristas pelo chat usando /motorista adicionar, /motorista bloquear e /motorista ativar.')
 
 st.divider()
-st.caption('⚠️ Demonstração com usuários fictícios, sem autenticação ou conexão ao WhatsApp. Não insira dados pessoais. Armazenamento temporário e isolado por visitante; não é um sistema de produção.')
+st.caption('⚠️ Demonstração pública com nome e CPF fictícios. A verificação matemática do CPF não confirma a identidade. Sem autenticação real ou conexão com WhatsApp; não informe documentos reais ou dados pessoais.')
