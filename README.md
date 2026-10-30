@@ -1,100 +1,101 @@
-# Central de Rotas — Demonstração visual
+# 🚚 Central de Rotas
 
-## Versão 0.7 — identificação do cliente e reconhecimento de motoristas
+**Protótipo de atendimento e gerenciamento de solicitações de transporte e coleta.**
 
-A demonstração agora pergunta **nome e CPF antes do menu**. O sistema verifica apenas se o CPF de teste tem um formato e dígitos verificadores matematicamente válidos — **não consulta a Receita Federal nem comprova identidade**.
+[![Testes do bot](https://github.com/RZ223-ai/central-de-rotas-demo/actions/workflows/testes.yml/badge.svg)](https://github.com/RZ223-ai/central-de-rotas-demo/actions/workflows/testes.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Interface-Streamlit-FF4B4B?logo=streamlit&logoColor=white)
+![Status](https://img.shields.io/badge/status-demonstra%C3%A7%C3%A3o-0F766E)
 
-### Roteiro de demonstração
+**[▶ Testar a demonstração online](https://central-de-rotas-demo-5t2wc5wrgla9jndvmvjxdn.streamlit.app/)** · [Ver roteiro de teste](docs/DEMONSTRACAO.md) · [Entender a arquitetura](docs/ARQUITETURA.md)
 
-1. Selecione **Administrador** no perfil simulado e digite `/motoristas`. O site já tem dois cadastros fictícios para testes.
-2. Para adicionar outro motorista, envie `/motorista adicionar`, responda com o **nome** e depois com um **CPF de teste** de 11 dígitos matematicamente válido. Os motoristas são cadastrados sem acesso automático.
-3. Selecione **Motorista A**. Na conversa, informe `Motorista A` e depois `123.456.789-09` (CPF de teste). O bot reconhecerá o pré-cadastro e liberará os comandos `/rotas`, `/aceitar`, `/minhas` e demais recursos exclusivos.
-4. Selecione **Motorista B**. Digite `Motorista B` e `987.654.321-00` (CPF de teste). Verifique que o segundo motorista também precisa passar pela identificação.
-5. Selecione **Cliente**, informe um nome inventado e CPF de teste `314.159.265-90`. O bot liberará o menu de solicitação de rotas.
-6. Cadastre uma rota no chat do cliente, aceite como Motorista A e confirme que ela não aparece mais como disponível para Motorista B.
-7. Para refazer o teste desde o início, use **Reiniciar demonstração**.
+> **Atenção:** este projeto é uma **demonstração pública**. Não está integrado ao WhatsApp e **não deve ser utilizado em operações reais nem receber dados pessoais verdadeiros**.
 
-Os CPFs aqui publicados são apenas números destinados a testar o algoritmo; **não são prova de identidade** e não devem ser associados a pessoas. O bot oculta a mensagem de CPF no histórico da interface e armazena somente uma assinatura no SQLite temporário. A chave de assinatura da demonstração está no código público e **não protege dados reais**. Não insira documentos pessoais reais nesse aplicativo público.
+## O problema e a proposta
 
-**Atenção para a versão comercial:** nome e CPF são dados conhecidos por terceiros e não podem ser usados como único fator de autenticação de motoristas ou administradores. Na integração com WhatsApp será necessário verificar a origem das mensagens e adotar um fator de confirmação adicional, além de controles de acesso, armazenamento seguro, privacidade/LGPD e medidas contra tentativas repetidas de acesso.
+Organizações que recebem solicitações de transporte ou coleta por mensagens precisam registrar pedidos, consultar serviços disponíveis, distribuir responsabilidades e acompanhar seu andamento.
 
+A **Central de Rotas** demonstra como automatizar parte desse fluxo com um motor de regras em Python e uma interface web que simula conversas. O projeto também serve como base de estudos para soluções de atendimento e operações logísticas, incluindo cenários de coleta de recicláveis.
 
-## Atualização 0.6 — boas-vindas e nome do cliente
+## O que já funciona
 
-Ao entrar como **Cliente** na demonstração, o bot envia automaticamente a saudação e pergunta o nome **antes de exibir o menu**. O cliente deve responder com um nome de 2 a 80 caracteres, usando letras, espaços, apóstrofo ou hífen. Depois, o nome é gravado no banco de dados temporário da sessão, o bot responde de forma personalizada e libera os comandos `/nova`, `/minhasrotas`, `/cancelar` e `/ajuda`.
+- **Atendimento guiado:** saudação, identificação demonstrativa e menus por perfil.
+- **Cadastro de rota:** origem, destino, data, horário, observações e confirmação.
+- **Motoristas:** pré-cadastro pelo administrador e acesso ao menu específico no simulador.
+- **Aceite de serviço:** atribuição condicionada à disponibilidade da rota para impedir que dois motoristas assumam o mesmo pedido.
+- **Acompanhamento:** listagens de rotas disponíveis, atribuídas, em andamento e concluídas.
+- **Administração:** consulta da operação, cadastro/bloqueio de motoristas e liberação de rotas atribuídas.
+- **Testes automatizados:** validações executadas pelo GitHub Actions.
 
-O cadastro inicial **não se aplica** aos motoristas e administradores previamente autorizados. As rotas de exemplo são criadas com um cliente fictício separado, para que não antecipem a identificação de quem estiver testando o site.
+A interface utiliza perfis e CPFs **fictícios** para demonstrar os diferentes papéis. A checagem matemática de um CPF **não confirma identidade** e não é uma solução de autenticação real.
 
-Para experimentar o primeiro contato novamente, clique em **Reiniciar demonstração**.
+## Tecnologias e organização
 
-Para verificar a lógica localmente: `python -m unittest discover -s tests -v` (requer Python; não depende do Streamlit para estes testes).
+| Tecnologia | Utilização |
+| --- | --- |
+| **Python** | Regras de negócio e fluxo das conversas |
+| **Streamlit** | Demonstração visual interativa |
+| **SQLite** | Persistência temporária por sessão no protótipo |
+| **GitHub Actions + unittest** | Verificação automática de sintaxe e testes |
 
-
-## Atualização visual 0.5
-
-A interface ganhou balões de conversa semelhantes aos de mensageiros, indicadores de status com cores, cartões com origem/destino/data/horário e identificação do motorista responsável. Os botões de aceitar, iniciar e concluir continuam chamando os comandos originais do bot, sem substituir as regras de atribuição.
-
-**Validação recomendada após o deploy:** entrar como Cliente, cadastrar uma rota fictícia, aceitar como Motorista A, conferir que ela saiu da lista disponível para Motorista B e consultar o motorista responsável como Administrador.
-
-Essa aplicação é apenas uma demonstração no navegador. Não recebe mensagens reais do WhatsApp, não possui autenticação efetiva e utiliza banco SQLite temporário por sessão. Não utilize dados reais ou informações sensíveis.
-
-
-Demo web em Streamlit usando a **lógica verdadeira de `bot.py` da versão 0.3**. A interação parece um WhatsApp, mas **não envia nem recebe mensagens pelo WhatsApp de verdade**.
-
-## Rodar no computador (Windows + VS Code)
-
-1. Abra esta pasta no VS Code.
-2. No Terminal/PowerShell, execute:
-
-```powershell
-py -m pip install -r requirements.txt
-py -m streamlit run streamlit_app.py
+```text
+central-de-rotas-demo/
+├── streamlit_app.py          # Interface de demonstração
+├── bot.py                    # Atendimento e regras de negócio
+├── banco.py                  # Estrutura e operações do SQLite
+├── identidade.py             # Identificação fictícia para testes
+├── mensagens.py              # Entrada de mensagens simuladas
+├── demo_data.py              # Cenário de exemplo
+├── tests/                    # Testes automatizados
+├── docs/                     # Documentação técnica e evolução
+└── .github/workflows/        # Automação de testes
 ```
 
-3. Abra o endereço mostrado pelo Streamlit (normalmente http://localhost:8501).
-4. Se o comando `py` não funcionar, experimente `python`.
+## Executar localmente
 
-## Publicar gratuitamente pelo Streamlit Community Cloud
+**Pré-requisito:** Python instalado.
 
-1. Crie ou entre na sua conta em https://github.com e crie um repositório (ex.: `central-de-rotas-demo`). Pode ser **público**, desde que use apenas arquivos desta demo e nenhum dado pessoal, segredo ou banco real.
-2. Abra o repositório e clique em **Add file > Upload files**. **Extraia o ZIP antes** e envie os arquivos da pasta: `streamlit_app.py`, `bot.py`, `banco.py`, `mensagens.py`, `demo_data.py`, `requirements.txt`, `README.md` e, opcionalmente, a pasta `.streamlit`. O `streamlit_app.py` deve ficar na raiz do repositório, não dentro de uma pasta extra. Finalize em **Commit changes**.
-3. Acesse https://share.streamlit.io e entre com GitHub.
-4. Clique **Create app** (ou **New app**) e escolha o repositório. Selecione a branch `main` e o arquivo principal `streamlit_app.py`.
-5. Clique **Deploy**. Quando a publicação terminar, copie o link `https://...streamlit.app` em **Share** para mostrar à empresa.
-
-Se preferir repositório privado, configure as permissões de compartilhamento do app no Streamlit. Verifique as regras atuais de acesso gratuito ao usar apps privados.
-
-## Roteiro de apresentação
-
-1. Em **Cliente**, selecione **Nova rota**, responda às perguntas e confirme com `S`.
-2. Mude para **Motorista A** e clique em **Aceitar esta rota**. O comando `/aceitar ID` é executado pelo `bot.py`.
-3. Mude para **Motorista B**. A rota aceita desapareceu da lista de disponíveis. Se digitar `/aceitar ID`, o bot recusa a tentativa.
-4. Mude para **Administrador** para ver a situação e, se necessário, liberar uma rota atribuída.
-5. Clique em **Reiniciar demonstração** para limpar todos os registros da sessão.
-
-## O que deve ser entendido antes de compartilhar
-
-- **Ambiente de apresentação, não serviço de operação real.** Os perfis são fictícios e a troca de perfil é livre; não há autenticação real.
-- **Cada sessão de navegador possui banco SQLite separado**, no armazenamento temporário do servidor. Duas pessoas abrindo o link não compartilham as mesmas rotas; isso é intencional para evitar interferência entre demonstrações.
-- Os dados podem desaparecer ao reiniciar/suspender o aplicativo, expirar o servidor ou reiniciar a demonstração.
-- Não coloque telefones reais, dados de clientes, endereços precisos de pessoas nem informações confidenciais neste ambiente.
-- A lógica real da produção exigirá webhook oficial do WhatsApp, autenticação, banco persistente, logs e backups, controles de acesso, LGPD e hospedagem adequada.
-
-## Arquivos
-
-- `streamlit_app.py`: interface gráfica de demonstração
-- `demo_data.py`: cria cenário fictício com dois motoristas e rotas de exemplo
-- `bot.py`: cadastro, comandos, validação e regras de atribuição reutilizados da v0.3
-- `banco.py`: SQLite, com caminho isolado por sessão usando `ContextVar`
-- `mensagens.py`: ligação entre interface e bot
-- `requirements.txt`: biblioteca Streamlit
-
-## Testes locais
-
-Para verificar apenas a lógica de negócio:
+No Windows, abra o terminal do VS Code na pasta do projeto:
 
 ```powershell
-py -m unittest discover -s tests -v
+py -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
+python -m streamlit run streamlit_app.py
 ```
 
-(Os testes da v0.3 não fazem parte deste pacote simplificado de publicação; para eles, use o pacote da v0.3.)
+No Linux/macOS, ative o ambiente virtual com `source .venv/bin/activate` e utilize `python` no lugar de `py`.
+
+Para executar os testes:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+## Limites do protótipo
+
+- **Não** envia nem recebe mensagens reais do WhatsApp.
+- **Não** oferece autenticação robusta de usuários; a seleção de perfis é simulada.
+- Cada visitante possui um banco SQLite temporário próprio; **as sessões não compartilham rotas**.
+- Os documentos de CPF apresentados nos testes são somente números fictícios para validar o fluxo.
+- **Não** implementa ainda planejamento de frota, rotas fixas, cobrança, classificação de resíduos ou documentos ambientais.
+- A implantação comercial requer arquitetura e controles de segurança próprios.
+
+## Próximos passos
+
+A evolução para uso comercial deve ser desenvolvida separadamente, após definição de requisitos e autorização do cliente. Entre as frentes previstas para avaliação estão a integração oficial com o WhatsApp, autenticação adequada, banco persistente, gestão de solicitações de coleta, planejamento da frota e treinamento dos usuários.
+
+Consulte o [plano de evolução](docs/PLANO_DE_EVOLUCAO.md) para separar o que **existe**, o que foi **levantado** e o que ainda precisa ser **definido**.
+
+## Documentação
+
+- [Demonstração passo a passo](docs/DEMONSTRACAO.md)
+- [Arquitetura e regras de negócio](docs/ARQUITETURA.md)
+- [Plano de evolução](docs/PLANO_DE_EVOLUCAO.md)
+- [Cuidados de segurança](SECURITY.md)
+
+---
+
+**Desenvolvimento:** [RZ223-ai](https://github.com/RZ223-ai) · Projeto autoral em evolução.
+
+**Licença:** ainda não foi definida uma licença de reutilização ou redistribuição. A publicação do código não concede, por si só, autorização para uso comercial por terceiros.
