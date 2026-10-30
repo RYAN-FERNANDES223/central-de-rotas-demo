@@ -1,6 +1,32 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .venv/
-rotas.db
-*.db
+venv/
+env/
+
+# Configurações locais e credenciais
+.env
+.env.*
+!.env.example
 .streamlit/secrets.toml
+secrets.toml
+*.pem
+*.key
+
+# Bancos e arquivos operacionais
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+
+# Ferramentas e artefatos locais
+.DS_Store
+Thumbs.db
+.idea/
