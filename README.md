@@ -59,12 +59,12 @@ No Windows, abra o terminal do VS Code na pasta do projeto:
 
 ```powershell
 py -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m streamlit run streamlit_app.py
 ```
 
-No Linux/macOS, ative o ambiente virtual com `source .venv/bin/activate` e utilize `python` no lugar de `py`.
+No Linux/macOS, ative o ambiente virtual com `source .venv/bin/activate` e utilize `python` no lugar de `py`. Se o PowerShell bloquear a ativação, execute os comandos com `py -m pip install -r requirements.txt` e `py -m streamlit run streamlit_app.py` sem ativar o ambiente, ou configure a política de execução de forma apropriada para seu computador.
 
 Para executar os testes:
 
